@@ -270,13 +270,13 @@ def create_encoder(
     backbone_lower = backbone.lower()
 
     if 'resnet' in backbone_lower:
-        return ResNetEncoder(backbone, pretrained, progress)
+        return ResNetEncoder(backbone_lower, pretrained, progress)
     elif 'efficientnet' in backbone_lower:
-        return EfficientNetEncoder(backbone, pretrained, progress)
+        return EfficientNetEncoder(backbone_lower, pretrained, progress)
     elif 'mobilenet' in backbone_lower:
-        return MobileNetV3Encoder(backbone, pretrained, progress)
+        return MobileNetV3Encoder(backbone_lower, pretrained, progress)
     elif 'vit' in backbone_lower:
-        return ViTEncoder(backbone, pretrained, progress)
+        return ViTEncoder(backbone_lower, pretrained, progress)
     else:
         raise ValueError(f"Unknown backbone: {backbone}")
 
