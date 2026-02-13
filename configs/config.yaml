@@ -1,0 +1,121 @@
+# InduDet-Search 配置文件
+# 简化版配置 - 基于 SR-LLM 增量式搜索思想
+
+# ==================== 数据集配置 ====================
+dataset:
+  name: "mvtec"  # mvtec, visa, btad
+  data_dir: "./data/mvtec"
+  image_size: 224
+  num_channels: 3
+  train_batch_size: 32
+  eval_batch_size: 64
+  num_workers: 4
+
+# ==================== 搜索空间配置 ====================
+search_space:
+  # 编码器选择
+  backbone:
+    - "ResNet18"
+    - "ResNet50"
+    - "EfficientNet-B0"
+    - "MobileNetV3"
+    - "ViT-Small"
+
+  # 特征层级
+  feature_levels:
+    - "L2"
+    - "L2+L3"
+    - "L2+L3+L4"
+
+  # 检测方法
+  method:
+    - "memory_bank"
+    - "distribution"
+    - "contrastive"
+
+  # 记忆库大小
+  memory_size:
+    - 500
+    - 1000
+    - 2000
+
+  # k-NN参数
+  k:
+    - 1
+    - 5
+    - 9
+
+# ==================== 搜索策略配置 ====================
+search_strategy:
+  name: "incremental"  # random, bayesian, incremental
+  n_random: 50  # 随机探索次数
+  n_total: 200   # 总搜索次数
+  n_candidates: 100  # 贝叶斯优化候选数
+
+# ==================== 评估器配置 ====================
+evaluator:
+  fidelity_levels:
+    - level: "low"
+      epochs: 1
+      data_ratio: 0.1
+      threshold: 0.60
+    - level: "medium"
+      epochs: 10
+      data_ratio: 0.5
+      threshold: 0.75
+    - level: "high"
+      epochs: 50
+      data_ratio: 1.0
+      threshold: 0.0
+
+# ==================== 经验系统配置 ====================
+experience:
+  storage_type: "json"  # json, sqlite
+  storage_path: "./results/experiences.json"
+  max_cases: 1000
+  success_threshold: 0.85
+  failure_threshold: 0.50
+
+# ==================== LLM配置 ====================
+llm:
+  provider: "minimax"  # minimax, openai, anthropic
+  api_key: "${MINIMAX_API_KEY}"
+  base_url: "https://api.minimax.chat/v1"
+  model: "MiniMax-M2.1"
+  max_tokens: 2048
+  temperature: 0.7
+  use_for_suggestion: true  # 是否使用LLM建议初始架构
+
+# ==================== 训练配置 ====================
+training:
+  optimizer: "adam"
+  learning_rate: 1e-4
+  weight_decay: 1e-4
+  scheduler: "cosine"
+  warmup_epochs: 5
+  max_epochs: 100
+
+# ==================== 评估指标配置 ====================
+metrics:
+  auroc_threshold: 0.90
+  latency_constraint_ms: 100
+  params_constraint_m: 30
+
+# ==================== 资源限制 ====================
+resources:
+  max_time_hours: 24
+  max_gpu_memory_gb: 24
+  cuda_visible_devices: "0"
+
+# ==================== 输出配置 ====================
+output:
+  save_dir: "./results"
+  checkpoint_interval: 20
+  log_interval: 10
+  save_best: true
+  save_all: false
+
+# ==================== 设备配置 ====================
+device:
+  type: "cuda"  # cuda, cpu, mps
+  precision: "fp32"  # fp32, fp16, bf16

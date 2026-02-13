@@ -1,0 +1,64 @@
+# InduDet-Search Docker Compose 配置
+version: '3.8'
+
+services:
+  # GPU版本 (推荐)
+  indudet-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    runtime: nvidia  # 启用NVIDIA GPU
+    volumes:
+      - ./data:/app/data       # 数据卷
+      - ./results:/app/results # 结果卷
+      - ./configs:/app/configs # 配置文件卷
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: python run_search.py --n-trials 200 --category bottle --device cuda
+    restart: unless-stopped
+
+  # CPU版本 (无GPU时使用)
+  indudet-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./configs:/app/configs
+    command: python run_search.py --n-trials 50 --category bottle --device cpu
+    restart: unless-stopped
+
+  # Jupyter版 (用于开发调试)
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./notebooks:/app/notebooks
+    ports:
+      - "8888:8888"
+    command: |
+      jupyter notebook \
+        --notebook-dir=/app \
+        --ip=0.0.0.0 \
+        --port=8888 \
+        --no-browser \
+        --allow-root
+    restart: unless-stopped
+
+# 数据卷
+volumes:
+  data:
+    driver: local
+  results:
+    driver: local
