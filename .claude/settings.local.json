@@ -9,7 +9,14 @@
       "WebFetch(domain:autokeras.com)",
       "WebFetch(domain:microsoft.github.io)",
       "WebFetch(domain:papers.nips.cc)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(python -c:*)",
+      "Bash(python3:*)",
+      "Bash(where:*)",
+      "Bash(/c/msys64/ucrt64/bin/python.exe -m py_compile:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

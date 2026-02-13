@@ -369,7 +369,7 @@ class ContrastiveHead(BaseHead):
     @torch.no_grad()
     def _dequeue_and_enqueue(self, keys: torch.Tensor):
         """更新        batch队列"""
-_size = keys.shape[0]
+        batch_size = keys.shape[0]
         ptr = int(self.queue_ptr)
         assert self.memory_size % batch_size == 0
 
