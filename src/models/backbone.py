@@ -267,7 +267,7 @@ def create_encoder(
     Returns:
         编码器实例
     """
-    backbone_lower = backbone.lower()
+    backbone_lower = backbone.lower().replace('-', '_')
 
     if 'resnet' in backbone_lower:
         return ResNetEncoder(backbone_lower, pretrained, progress)
