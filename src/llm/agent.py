@@ -66,8 +66,22 @@ class MiniMaxM2Client(LLMClientBase):
             response.raise_for_status()
             result = response.json()
 
+            # 检查响应格式
+            if 'choices' not in result:
+                # 尝试从错误响应中提取信息
+                error_msg = result.get('msg', result.get('error', str(result)))
+                return {
+                    'content': '',
+                    'error': f"API响应格式错误: {error_msg}",
+                    'status': 'error',
+                }
+
+            choice = result['choices'][0] if result['choices'] else {}
+            message = choice.get('message', {})
+            content = message.get('content', '')
+
             return {
-                'content': result['choices'][0]['message']['content'],
+                'content': content,
                 'usage': result.get('usage', {}),
                 'model': self.model,
                 'status': 'success',
@@ -76,7 +90,19 @@ class MiniMaxM2Client(LLMClientBase):
         except requests.exceptions.RequestException as e:
             return {
                 'content': '',
-                'error': str(e),
+                'error': f"请求失败: {str(e)}",
+                'status': 'error',
+            }
+        except json.JSONDecodeError as e:
+            return {
+                'content': '',
+                'error': f"JSON解析失败: {str(e)}",
+                'status': 'error',
+            }
+        except (KeyError, IndexError) as e:
+            return {
+                'content': '',
+                'error': f"响应格式解析错误: {str(e)}",
                 'status': 'error',
             }
 
