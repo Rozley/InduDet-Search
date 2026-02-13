@@ -142,6 +142,10 @@ class MVTecDataset(Dataset):
                 ])
                 mask = mask_transform(mask)
 
+        # 如果mask为None，返回全零张量（保持维度一致性）
+        if mask is None:
+            mask = torch.zeros(1, image.shape[1], image.shape[2], dtype=torch.float32)
+
         return image, label, mask
 
 
