@@ -79,12 +79,15 @@ class MemoryBankHead(BaseHead):
 
     def forward(self, features: torch.Tensor) -> Dict[str, torch.Tensor]:
         """前向传播"""
-        # 投影特征
-        features = self.projector(features)
-
         # 展平为2D: (B, C, H, W) -> (B*H*W, C)
         B, C, H, W = features.shape
         features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+
+        # 投影特征
+        features_flat = self.projector(features_flat)
+
+        # 重新reshape回4D
+        features = features_flat.reshape(B, -1, H, W)
 
         # 计算与记忆库的距离
         if self.memory_bank is not None:
@@ -117,12 +120,15 @@ class MemoryBankHead(BaseHead):
         Args:
             features: 正常样本特征 (N, C, H, W)
         """
-        # 投影特征
-        features = self.projector(features)
-
-        # 展平
+        # 展平为2D: (N, C, H, W) -> (N*H*W, C)
         N, C, H, W = features.shape
         features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+
+        # 投影特征
+        features_flat = self.projector(features_flat)
+
+        # 重新获取投影后的通道数
+        C = features_flat.shape[1]
 
         # 随机采样或核心集采样构建记忆库
         n_samples = features_flat.shape[0]
@@ -197,11 +203,15 @@ class DistributionHead(BaseHead):
 
     def forward(self, features: torch.Tensor) -> Dict[str, torch.Tensor]:
         """前向传播"""
-        # 投影特征
-        features = self.projector(features)
-
+        # 展平为2D: (B, C, H, W) -> (B*H*W, C)
         B, C, H, W = features.shape
         features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+
+        # 投影特征
+        features_flat = self.projector(features_flat)
+
+        # 重新获取投影后的通道数
+        C = features_flat.shape[1]
 
         # 计算马氏距离
         if self.mean is not None and self.cov_inv is not None:
@@ -231,11 +241,15 @@ class DistributionHead(BaseHead):
         Args:
             features: 正常样本特征 (N, C, H, W)
         """
-        # 投影特征
-        features = self.projector(features)
-
+        # 展平为2D: (N, C, H, W) -> (N*H*W, C)
         N, C, H, W = features.shape
         features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+
+        # 投影特征
+        features_flat = self.projector(features_flat)
+
+        # 重新获取投影后的通道数
+        C = features_flat.shape[1]
 
         # 计算均值
         self.mean = features_flat.mean(dim=0)
@@ -347,12 +361,13 @@ class ContrastiveHead(BaseHead):
         Args:
             features: 正常样本特征 (N, C, H, W)
         """
-        # 投影
-        embeddings = self.projector(features)
-        embeddings = F.normalize(embeddings, dim=1)
+        # 展平为2D: (N, C, H, W) -> (N*H*W, C)
+        N, C, H, W = features.shape
+        features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
 
-        N, C, H, W = embeddings.shape
-        embeddings_flat = embeddings.permute(0, 2, 3, 1).reshape(-1, C)
+        # 投影到嵌入空间
+        embeddings = self.projector(features_flat)
+        embeddings = F.normalize(embeddings, dim=1)
 
         # 使用所有正常样本的均值作为原型
         self.prototype = embeddings_flat.mean(dim=0, keepdim=True)
