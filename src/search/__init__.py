@@ -149,7 +149,7 @@ class ArchitectureSearcher:
                 )
                 config = suggestion['config']
                 if verbose:
-                    print(f"\n[LLM建议] {config['reasoning']}")
+                    print(f"\n[LLM建议] {suggestion.get('reasoning', '基于LLM分析')}")
             else:
                 config = self.searcher.sample_architecture(trial)
 
