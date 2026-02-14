@@ -53,6 +53,12 @@ class AnomalyDetector(nn.Module):
         backbone_channels = self.encoder.get_out_channels()
         self.in_channels = self._get_in_channels(backbone_channels)
 
+        # 获取实际的 encoder 输出通道数（通过一个虚拟输入）
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, 3, 224, 224)
+            encoder_output = self.encoder(dummy_input)
+            self.encoder_out_channels = encoder_output.shape[1]
+
         # 创建检测头 - 使用实际的 encoder 输出通道数
         head_config = {
             'memory_size': config.get('memory_size', 1000),
@@ -60,7 +66,7 @@ class AnomalyDetector(nn.Module):
         }
         self.head = create_head(
             method=self.method,
-            in_channels=self.encoder(x).shape[1],  # 使用实际的 encoder 输出通道数
+            in_channels=self.encoder_out_channels,  # 使用实际的 encoder 输出通道数
             config=head_config,
         )
 
