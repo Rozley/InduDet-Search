@@ -9,6 +9,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import numpy as np
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """自定义JSON编码器，处理numpy类型"""
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
 
 class SimpleExperienceRAG:
     """
@@ -206,7 +220,7 @@ class SimpleExperienceRAG:
         }
 
         with open(self.storage_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            json.dump(data, f, indent=2, ensure_ascii=False, cls=NumpyEncoder)
 
     def _load(self):
         """从文件加载"""
