@@ -10,9 +10,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 import yaml
 from tqdm import tqdm
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """JSON编码器，支持numpy类型"""
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
 
 from ..utils.config import load_config
 from ..search.search_space import get_search_space, SearchSpace
@@ -221,7 +234,7 @@ class ArchitectureSearcher:
 
         checkpoint_path = self.save_dir / 'checkpoint.json'
         with open(checkpoint_path, 'w') as f:
-            json.dump(checkpoint, f, indent=2)
+            json.dump(checkpoint, f, indent=2, cls=NumpyEncoder)
 
         print(f"Checkpoint saved to {checkpoint_path}")
 
@@ -230,7 +243,7 @@ class ArchitectureSearcher:
         # 保存完整结果
         results_path = self.save_dir / 'results.json'
         with open(results_path, 'w') as f:
-            json.dump(self.results, f, indent=2)
+            json.dump(self.results, f, indent=2, cls=NumpyEncoder)
 
         # 保存最佳配置
         if self.best_config:
@@ -240,7 +253,7 @@ class ArchitectureSearcher:
                     'config': self.best_config,
                     'score': self.best_score,
                     'timestamp': datetime.now().isoformat(),
-                }, f, indent=2)
+                }, f, indent=2, cls=NumpyEncoder)
 
         # 保存经验系统
         experience_path = self.save_dir / 'experiences.json'
