@@ -79,9 +79,20 @@ class MemoryBankHead(BaseHead):
 
     def forward(self, features: torch.Tensor) -> Dict[str, torch.Tensor]:
         """前向传播"""
+        print(f"[Debug MemoryBankHead] features shape: {features.shape}, dim: {features.dim()}")
         # 展平为2D: (B, C, H, W) -> (B*H*W, C)
-        B, C, H, W = features.shape
-        features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+        if features.dim() == 4:
+            B, C, H, W = features.shape
+            features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+        elif features.dim() == 2:
+            B, n_features = features.shape
+            # 计算 H 和 W
+            HW = n_features // self.in_channels
+            H = W = int(HW ** 0.5)
+            features_flat = features
+        else:
+            raise ValueError(f"Unsupported features dim: {features.dim()}")
+        print(f"[Debug] features_flat shape: {features_flat.shape}, in_channels: {self.in_channels}")
 
         # 投影特征
         features_flat = self.projector(features_flat)
@@ -203,9 +214,20 @@ class DistributionHead(BaseHead):
 
     def forward(self, features: torch.Tensor) -> Dict[str, torch.Tensor]:
         """前向传播"""
+        print(f"[Debug MemoryBankHead] features shape: {features.shape}, dim: {features.dim()}")
         # 展平为2D: (B, C, H, W) -> (B*H*W, C)
-        B, C, H, W = features.shape
-        features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+        if features.dim() == 4:
+            B, C, H, W = features.shape
+            features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
+        elif features.dim() == 2:
+            B, n_features = features.shape
+            # 计算 H 和 W
+            HW = n_features // self.in_channels
+            H = W = int(HW ** 0.5)
+            features_flat = features
+        else:
+            raise ValueError(f"Unsupported features dim: {features.dim()}")
+        print(f"[Debug] features_flat shape: {features_flat.shape}, in_channels: {self.in_channels}")
 
         # 投影特征
         features_flat = self.projector(features_flat)

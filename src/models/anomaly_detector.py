@@ -53,6 +53,10 @@ class AnomalyDetector(nn.Module):
         backbone_channels = self.encoder.get_out_channels()
         self.in_channels = self._get_in_channels(backbone_channels)
 
+        print(f"[Debug] backbone_channels: {backbone_channels}")
+        print(f"[Debug] feature_levels: {self.feature_levels}")
+        print(f"[Debug] in_channels: {self.in_channels}")
+
         # 创建检测头
         head_config = {
             'memory_size': config.get('memory_size', 1000),
