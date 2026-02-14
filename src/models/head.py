@@ -388,7 +388,7 @@ class ContrastiveHead(BaseHead):
         embeddings = F.normalize(embeddings, dim=1)
 
         # 使用所有正常样本的均值作为原型
-        self.prototype = embeddings_flat.mean(dim=0, keepdim=True)
+        self.prototype = embeddings.mean(dim=0, keepdim=True)
         self.prototype = F.normalize(self.prototype, dim=1)
 
         # 同时初始化队列
