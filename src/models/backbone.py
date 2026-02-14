@@ -161,12 +161,18 @@ class MobileNetV3Encoder(BaseEncoder):
     ):
         super().__init__(pretrained)
 
-        if backbone == 'mobilenet_v3_large':
-            self.model = models.mobilenet_v3_large(weights='IMAGENET1K_V1' if pretrained else None)
+        # 规范化 backbone 名称
+        if backbone in ['mobilenetv3', 'mobilenet_v3', 'mobilenet_v3_large']:
+            backbone = 'mobilenet_v3_large'
         elif backbone == 'mobilenet_v3_small':
-            self.model = models.mobilenet_v3_small(weights='IMAGENET1K_V1' if pretrained else None)
+            pass
         else:
             raise ValueError(f"Unknown MobileNet backbone: {backbone}")
+
+        if backbone == 'mobilenet_v3_large':
+            self.model = models.mobilenet_v3_large(weights='IMAGENET1K_V1' if pretrained else None)
+        else:  # mobilenet_v3_small
+            self.model = models.mobilenet_v3_small(weights='IMAGENET1K_V1' if pretrained else None)
 
         self.features = self.model.features
         self.out_channels = [16, 16, 24, 24, 40, 40, 80, 80, 112, 112, 960, 1280]
