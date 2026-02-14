@@ -199,6 +199,10 @@ class MultiFidelityEvaluator:
                 output = model.predict(images)
                 scores = output['image_score'].cpu().numpy()
 
+                # 确保 scores 是 1D 数组
+                if scores.ndim == 0:
+                    scores = np.array([scores])
+
                 all_scores.extend(scores)
                 all_labels.extend(labels)
 
