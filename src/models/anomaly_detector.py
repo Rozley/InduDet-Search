@@ -52,8 +52,6 @@ class AnomalyDetector(nn.Module):
         # 获取特征通道数
         backbone_channels = self.encoder.get_out_channels()
         self.in_channels = self._get_in_channels(backbone_channels)
-        # 使用实际的 encoder 输出通道数（最后一个 layer）
-        self.encoder_out_channels = backbone_channels[-1]
 
         # 创建检测头 - 使用实际的 encoder 输出通道数
         head_config = {
@@ -62,7 +60,7 @@ class AnomalyDetector(nn.Module):
         }
         self.head = create_head(
             method=self.method,
-            in_channels=self.encoder_out_channels,  # 使用实际输出通道数
+            in_channels=self.encoder(x).shape[1],  # 使用实际的 encoder 输出通道数
             config=head_config,
         )
 

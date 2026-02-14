@@ -85,7 +85,6 @@ class MemoryBankHead(BaseHead):
             features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
         elif features.dim() == 2:
             B, C = features.shape
-            # 计算 H 和 W
             n_features = C
             HW = n_features // self.in_channels if self.in_channels > 0 else n_features
             H = W = int(HW ** 0.5) if HW > 0 else 1
@@ -93,11 +92,7 @@ class MemoryBankHead(BaseHead):
         else:
             raise ValueError(f"Unsupported features dim: {features.dim()}")
 
-        # 投影特征 - 使用实际输入通道数
-        if not isinstance(self.projector, nn.Identity):
-            # 重新创建投影层以匹配实际输入通道数
-            pass  # 投影层已创建，使用已配置的维度
-
+        # 投影特征
         features_flat = self.projector(features_flat)
 
         # 重新reshape回4D
@@ -223,7 +218,6 @@ class DistributionHead(BaseHead):
             features_flat = features.permute(0, 2, 3, 1).reshape(-1, C)
         elif features.dim() == 2:
             B, C = features.shape
-            # 计算 H 和 W
             n_features = C
             HW = n_features // self.in_channels if self.in_channels > 0 else n_features
             H = W = int(HW ** 0.5) if HW > 0 else 1
@@ -231,11 +225,7 @@ class DistributionHead(BaseHead):
         else:
             raise ValueError(f"Unsupported features dim: {features.dim()}")
 
-        # 投影特征 - 使用实际输入通道数
-        if not isinstance(self.projector, nn.Identity):
-            # 重新创建投影层以匹配实际输入通道数
-            pass  # 投影层已创建，使用已配置的维度
-
+        # 投影特征
         features_flat = self.projector(features_flat)
 
         # 重新获取投影后的通道数
