@@ -151,7 +151,7 @@ class MemoryBankHead(BaseHead):
             self.memory_bank = features_flat[indices]
 
         # 转换为numpy用于sklearn
-        memory_np = self.memory_bank.cpu().numpy()
+        memory_np = self.memory_bank.detach().cpu().numpy()
 
         # 构建KNN索引
         self.knn = NearestNeighbors(
