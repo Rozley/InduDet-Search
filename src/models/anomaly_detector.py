@@ -119,7 +119,19 @@ class AnomalyDetector(nn.Module):
 
     def _get_level_features(self, features: torch.Tensor) -> torch.Tensor:
         """获取指定层级的特征"""
-        # 直接返回 encoder 的原始输出，保持 4D (B, C, H, W)
+        # 如果是 2D (B, C)，需要尝试 reshape
+        if features.dim() == 2:
+            B = features.shape[0]
+            n_features = features.shape[1]
+            # 尝试按 in_channels 推断 H 和 W
+            if n_features % self.in_channels == 0:
+                HW = n_features // self.in_channels
+                H = W = int(HW ** 0.5)
+                if H * W == HW:
+                    return features.reshape(B, self.in_channels, H, W)
+            # 无法推断，保持原样
+            return features
+        # 如果已经是 4D，直接返回
         return features
 
     def extract_features(self, x: torch.Tensor) -> torch.Tensor:
