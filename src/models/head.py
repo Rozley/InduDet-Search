@@ -392,10 +392,10 @@ class ContrastiveHead(BaseHead):
         self.prototype = F.normalize(self.prototype, dim=1)
 
         # 同时初始化队列
-        n_samples = embeddings_flat.shape[0]
+        n_samples = embeddings.shape[0]
         if n_samples >= self.memory_size:
             indices = np.random.choice(n_samples, self.memory_size, replace=False)
-            self.queue = embeddings_flat[indices]
+            self.queue = embeddings[indices]
         else:
             self.queue[:n_samples] = embeddings_flat
 
