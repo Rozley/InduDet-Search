@@ -22,10 +22,10 @@ import sys
 from src.search import run_search
 
 
-# MVTec AD 所有类别
+# MVTec AD 所有类别 (15个)
 MVTEC_CATEGORIES = [
     'bottle', 'cable', 'capsule', 'carpet', 'grid',
-    'guitar', 'hazelnut', 'leather', 'metal_nut', 'pill',
+    'hazelnut', 'leather', 'metal_nut', 'pill',
     'screw', 'tile', 'toothbrush', 'transistor', 'wood', 'zipper'
 ]
 

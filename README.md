@@ -15,6 +15,7 @@
 - 📊 **多保真度评估**: Low → Medium → High 三级评估
 - 💾 **经验积累**: RAG 风格的历史经验系统
 - 🚀 **边缘部署**: 支持 TensorRT/TFLite 导出
+- 📦 **多类别搜索**: 支持单类别和多类别联合搜索
 
 ## 安装
 
@@ -35,10 +36,16 @@ pip install -r requirements.txt
 ## 快速开始
 
 ```bash
-# 运行架构搜索
+# 单类别搜索
 python run_search.py --n-trials 200 --category bottle
 
-# 或使用配置
+# 多类别搜索
+python run_search.py --categories bottle,cable,transistor --n-trials 100
+
+# 所有15个类别联合搜索
+python run_search.py --all-categories --n-trials 200
+
+# 使用配置文件
 python run_search.py --config configs/config.yaml
 ```
 
@@ -61,7 +68,7 @@ InduDet-Search/
 
 ## 使用方法
 
-### 命令行参数
+### 单类别搜索
 
 ```bash
 python run_search.py \
@@ -72,13 +79,32 @@ python run_search.py \
   --device cuda
 ```
 
+### 多类别搜索
+
+```bash
+# 指定多个类别（逗号分隔）
+python run_search.py \
+  --categories bottle,cable,transistor \
+  --n-trials 100 \
+  --strategy joint
+
+# 使用所有15个类别
+python run_search.py \
+  --all-categories \
+  --n-trials 200 \
+  --strategy sequential
+```
+
 ### 参数说明
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | `--data-dir` | `./data/mvtec` | 数据集目录 |
-| `--category` | `bottle` | 物体类别 |
+| `--category` | `bottle` | 单个物体类别 |
+| `--categories` | - | 多个类别，逗号分隔 |
+| `--all-categories` | - | 使用所有MVTec AD类别 |
 | `--n-trials` | `200` | 搜索次数 |
+| `--strategy` | `joint` | 搜索策略: `sequential`(顺序) 或 `joint`(联合) |
 | `--save-dir` | `./results` | 结果保存目录 |
 | `--device` | `cuda` | 计算设备 |
 
@@ -86,8 +112,8 @@ python run_search.py \
 
 系统使用 [MVTec AD](https://www.mvtec.com/company/research/datasets/mvtec-ad) 数据集。
 
-支持的类别：
-- bottle, cable, capsule, carpet, grid, guitar, hazelnut, leather, metal_nut, pill, screw, tile, toothbrush, transistor, wood, zipper
+支持的类别（15个）：
+- bottle, cable, capsule, carpet, grid, hazelnut, leather, metal_nut, pill, screw, tile, toothbrush, transistor, wood, zipper
 
 ## 预期效果
 
