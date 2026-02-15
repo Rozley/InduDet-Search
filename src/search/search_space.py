@@ -6,17 +6,27 @@
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
+from ..models.backbone import is_vit_available
+
 
 # ==================== 简化的搜索空间 ====================
-SEARCH_SPACE = {
-    # 编码器选择（5选1）
-    'backbone': [
+# 动态生成 backbone 列表（根据可用性）
+def _get_backbone_options() -> List[str]:
+    """获取可用的 backbone 列表"""
+    backbones = [
         'ResNet18',
         'ResNet50',
         'EfficientNet-B0',
         'MobileNetV3',
-        'ViT-Small',
-    ],
+    ]
+    if is_vit_available():
+        backbones.append('ViT-Small')
+    return backbones
+
+
+SEARCH_SPACE = {
+    # 编码器选择（动态）
+    'backbone': _get_backbone_options(),
 
     # 特征层级（3选1）
     'feature_levels': [

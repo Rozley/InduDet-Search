@@ -201,6 +201,9 @@ class MobileNetV3Encoder(BaseEncoder):
 class ViTEncoder(BaseEncoder):
     """Vision Transformer 编码器"""
 
+    # 检查 ViT 模型是否可用
+    _VIT_AVAILABLE = hasattr(models, 'vit_small_patch16_224')
+
     def __init__(
         self,
         backbone: str = 'vit_small_patch16_224',
@@ -208,6 +211,12 @@ class ViTEncoder(BaseEncoder):
         progress: bool = True,
     ):
         super().__init__(pretrained)
+
+        if not ViTEncoder._VIT_AVAILABLE:
+            raise ValueError(
+                f"ViT models require torchvision >= 0.12. "
+                f"Please upgrade torchvision or remove ViT from search space."
+            )
 
         # 支持短名称映射
         vit_aliases = {
@@ -221,8 +230,10 @@ class ViTEncoder(BaseEncoder):
 
         if backbone_name == 'vit_small_patch16_224':
             self.model = models.vit_small_patch16_224(weights='IMAGENET1K_V1' if pretrained else None)
+            self.out_channels = 384
         elif backbone_name == 'vit_base_patch16_224':
             self.model = models.vit_base_patch16_224(weights='IMAGENET1K_V1' if pretrained else None)
+            self.out_channels = 768
         else:
             raise ValueError(f"Unknown ViT backbone: {backbone}")
 
@@ -258,7 +269,7 @@ class ViTEncoder(BaseEncoder):
         return x
 
     def get_out_channels(self) -> List[int]:
-        return [384]  # ViT-Small的隐藏维度
+        return [self.out_channels]
 
     def get_feature_levels(self, levels: List[int]) -> Dict[int, torch.Tensor]:
         """获取指定层级的特征"""
@@ -292,6 +303,11 @@ def create_encoder(
         'vit': 'vit_base_patch16_224',
     }
     if backbone_lower in vit_aliases:
+        if not hasattr(models, 'vit_small_patch16_224'):
+            raise ValueError(
+                f"ViT backbone requires torchvision >= 0.12. "
+                f"Your torchvision doesn't support ViT models."
+            )
         backbone_lower = vit_aliases[backbone_lower]
 
     if 'resnet' in backbone_lower:
@@ -314,3 +330,8 @@ def get_backbone_info(backbone: str) -> Dict[str, Any]:
         'out_channels': encoder.get_out_channels(),
         'params': sum(p.numel() for p in encoder.parameters()),
     }
+
+
+def is_vit_available() -> bool:
+    """检查 ViT 模型是否可用"""
+    return hasattr(models, 'vit_small_patch16_224')
