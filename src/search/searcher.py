@@ -165,6 +165,11 @@ class IncrementalSearcher:
             config: 架构配置
             score: 评估分数 (AUROC)
         """
+        # 跳过 NaN 分数
+        if np.isnan(score):
+            print(f"[Warning] Skipping config with NaN score: {config}")
+            return
+
         # 记录历史
         self.history.append({
             'config': config.copy(),
@@ -184,6 +189,14 @@ class IncrementalSearcher:
         """训练高斯过程模型"""
         X_train = np.array(self.X_train)
         y_train = np.array(self.y_train)
+
+        # 过滤 NaN 值
+        valid_mask = ~np.isnan(y_train)
+        if not np.any(valid_mask):
+            return  # 所有值都是 NaN，跳过拟合
+
+        X_train = X_train[valid_mask]
+        y_train = y_train[valid_mask]
 
         # 标准化y
         y_mean = y_train.mean()
