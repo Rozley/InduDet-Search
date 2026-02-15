@@ -201,41 +201,39 @@ class MobileNetV3Encoder(BaseEncoder):
 class ViTEncoder(BaseEncoder):
     """Vision Transformer 编码器"""
 
-    # 检查 ViT 模型是否可用
-    _VIT_AVAILABLE = hasattr(models, 'vit_small_patch16_224')
+    # 新版 torchvision (0.25+) ViT 模型名称映射
+    VIT_MODEL_NAMES = {
+        # (model_name, weights_enum_name, out_channels)
+        'vit_small': ('vit_b_16', 'IMAGENET1K_V1', 768),
+        'vit_base': ('vit_l_16', 'IMAGENET1K_V1', 1024),
+        'vit_b_16': ('vit_b_16', 'IMAGENET1K_V1', 768),
+        'vit_l_16': ('vit_l_16', 'IMAGENET1K_V1', 1024),
+    }
 
     def __init__(
         self,
-        backbone: str = 'vit_small_patch16_224',
+        backbone: str = 'vit_small',
         pretrained: bool = True,
         progress: bool = True,
     ):
         super().__init__(pretrained)
 
-        if not ViTEncoder._VIT_AVAILABLE:
-            raise ValueError(
-                f"ViT models require torchvision >= 0.12. "
-                f"Please upgrade torchvision or remove ViT from search space."
-            )
-
-        # 支持短名称映射
-        vit_aliases = {
-            'vit_small': 'vit_small_patch16_224',
-            'vit_small_patch16_224': 'vit_small_patch16_224',
-            'vit_base': 'vit_base_patch16_224',
-            'vit_base_patch16_224': 'vit_base_patch16_224',
-        }
-
-        backbone_name = vit_aliases.get(backbone, backbone)
-
-        if backbone_name == 'vit_small_patch16_224':
-            self.model = models.vit_small_patch16_224(weights='IMAGENET1K_V1' if pretrained else None)
-            self.out_channels = 384
-        elif backbone_name == 'vit_base_patch16_224':
-            self.model = models.vit_base_patch16_224(weights='IMAGENET1K_V1' if pretrained else None)
-            self.out_channels = 768
-        else:
+        if backbone not in self.VIT_MODEL_NAMES:
             raise ValueError(f"Unknown ViT backbone: {backbone}")
+
+        model_name, weights_name, out_channels = self.VIT_MODEL_NAMES[backbone]
+
+        # 获取模型构造函数
+        model_fn = getattr(models, model_name, None)
+        if model_fn is None:
+            raise ValueError(f"Model {model_name} not available in this torchvision version")
+
+        # 获取权重
+        weights_enum = getattr(models, f'{model_name.upper()}_WEIGHTS', None)
+        weights = getattr(weights_enum, weights_name, None) if weights_enum else None
+
+        self.model = model_fn(weights=weights if pretrained else None)
+        self.out_channels = out_channels
 
         self.patch_embed = self.model.patch_embed
         self.pos_embed = self.model.pos_embed
@@ -296,14 +294,13 @@ def create_encoder(
     """
     backbone_lower = backbone.lower().replace('-', '_')
 
-    # ViT 别名映射
+    # ViT 别名映射 (torchvision 0.25+)
     vit_aliases = {
-        'vit_small': 'vit_small_patch16_224',
-        'vit_base': 'vit_base_patch16_224',
-        'vit': 'vit_base_patch16_224',
+        'vit_small': 'vit_small',
+        'vit_base': 'vit_base',
     }
     if backbone_lower in vit_aliases:
-        if not hasattr(models, 'vit_small_patch16_224'):
+        if not is_vit_available():
             raise ValueError(
                 f"ViT backbone requires torchvision >= 0.12. "
                 f"Your torchvision doesn't support ViT models."
@@ -334,4 +331,4 @@ def get_backbone_info(backbone: str) -> Dict[str, Any]:
 
 def is_vit_available() -> bool:
     """检查 ViT 模型是否可用"""
-    return hasattr(models, 'vit_small_patch16_224')
+    return hasattr(models, 'vit_b_16')
