@@ -209,9 +209,19 @@ class ViTEncoder(BaseEncoder):
     ):
         super().__init__(pretrained)
 
-        if backbone == 'vit_small_patch16_224':
+        # 支持短名称映射
+        vit_aliases = {
+            'vit_small': 'vit_small_patch16_224',
+            'vit_small_patch16_224': 'vit_small_patch16_224',
+            'vit_base': 'vit_base_patch16_224',
+            'vit_base_patch16_224': 'vit_base_patch16_224',
+        }
+
+        backbone_name = vit_aliases.get(backbone, backbone)
+
+        if backbone_name == 'vit_small_patch16_224':
             self.model = models.vit_small_patch16_224(weights='IMAGENET1K_V1' if pretrained else None)
-        elif backbone == 'vit_base_patch16_224':
+        elif backbone_name == 'vit_base_patch16_224':
             self.model = models.vit_base_patch16_224(weights='IMAGENET1K_V1' if pretrained else None)
         else:
             raise ValueError(f"Unknown ViT backbone: {backbone}")
@@ -274,6 +284,15 @@ def create_encoder(
         编码器实例
     """
     backbone_lower = backbone.lower().replace('-', '_')
+
+    # ViT 别名映射
+    vit_aliases = {
+        'vit_small': 'vit_small_patch16_224',
+        'vit_base': 'vit_base_patch16_224',
+        'vit': 'vit_base_patch16_224',
+    }
+    if backbone_lower in vit_aliases:
+        backbone_lower = vit_aliases[backbone_lower]
 
     if 'resnet' in backbone_lower:
         return ResNetEncoder(backbone_lower, pretrained, progress)
