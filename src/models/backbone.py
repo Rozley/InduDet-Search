@@ -199,16 +199,7 @@ class MobileNetV3Encoder(BaseEncoder):
 
 
 class ViTEncoder(BaseEncoder):
-    """Vision Transformer 编码器"""
-
-    # 新版 torchvision (0.25+) ViT 模型名称映射
-    VIT_MODEL_NAMES = {
-        # (model_name, weights_enum_name, out_channels)
-        'vit_small': ('vit_b_16', 'IMAGENET1K_V1', 768),
-        'vit_base': ('vit_l_16', 'IMAGENET1K_V1', 1024),
-        'vit_b_16': ('vit_b_16', 'IMAGENET1K_V1', 768),
-        'vit_l_16': ('vit_l_16', 'IMAGENET1K_V1', 1024),
-    }
+    """Vision Transformer 编码器 (torchvision 0.25+)"""
 
     def __init__(
         self,
@@ -218,60 +209,55 @@ class ViTEncoder(BaseEncoder):
     ):
         super().__init__(pretrained)
 
-        if backbone not in self.VIT_MODEL_NAMES:
+        # 模型名称映射
+        MODEL_CONFIGS = {
+            'vit_small': ('vit_b_16', 768),
+            'vit_base': ('vit_l_16', 1024),
+        }
+
+        if backbone not in MODEL_CONFIGS:
             raise ValueError(f"Unknown ViT backbone: {backbone}")
 
-        model_name, weights_name, out_channels = self.VIT_MODEL_NAMES[backbone]
-
-        # 获取模型构造函数
+        model_name, out_channels = MODEL_CONFIGS[backbone]
         model_fn = getattr(models, model_name, None)
-        if model_fn is None:
-            raise ValueError(f"Model {model_name} not available in this torchvision version")
 
         # 获取权重
-        weights_enum = getattr(models, f'{model_name.upper()}_WEIGHTS', None)
-        weights = getattr(weights_enum, weights_name, None) if weights_enum else None
+        weights = getattr(models, f'{model_name.upper()}_WEIGHTS', None)
+        default_weights = getattr(weights, 'IMAGENET1K_V1', None) if weights else None
 
-        self.model = model_fn(weights=weights if pretrained else None)
+        self.model = model_fn(weights=default_weights if pretrained else None)
         self.out_channels = out_channels
 
-        self.patch_embed = self.model.patch_embed
-        self.pos_embed = self.model.pos_embed
-        self.blocks = self.model.blocks
-        self.norm = self.model.norm
+        # 使用 create_feature_extractor 获取特征
+        # 返回最后一个 Transformer block 的输出
+        self.feature_extractor = create_feature_extractor(
+            self.model,
+            return_nodes={'blocks': 'features'}
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """提取特征"""
-        B, C, H, W = x.shape
+        with torch.no_grad():
+            features = self.feature_extractor(x)['features']
 
-        # 提取patch
-        x = self.patch_embed(x)
-        x = x + self.pos_embed
+        B, C, H, W = features.shape
 
-        # Transformer blocks
-        for block in self.blocks:
-            x = block(x)
-
-        x = self.norm(x)
-
-        # 重排为特征图
-        # ViT输出的是token序列，需要重排为2D特征图
-        n_patches = int((H // 16) * (W // 16))
+        # 转换 token 序列为 2D 特征图
+        # ViT 使用 16x16 patches
+        n_patches = (H // 16) * (W // 16)
         side = int(n_patches ** 0.5)
-        if side * side == n_patches:
-            x = x[:, 1:].transpose(1, 2).reshape(B, -1, side, side)  # 去掉class token
-        else:
-            # 如果不是完美平方，保持token形式
-            pass
 
-        return x
+        if side * side == n_patches:
+            # 去掉 class token，重排为 2D
+            features = features[:, 1:].transpose(1, 2).reshape(B, -1, side, side)
+
+        return features
 
     def get_out_channels(self) -> List[int]:
         return [self.out_channels]
 
     def get_feature_levels(self, levels: List[int]) -> Dict[int, torch.Tensor]:
         """获取指定层级的特征"""
-        # ViT只有一个主要的输出层
         x = self.forward(torch.zeros(1, 3, 224, 224))
         return {1: x}
 
