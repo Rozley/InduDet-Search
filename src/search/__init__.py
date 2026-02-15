@@ -428,8 +428,8 @@ class MultiCategorySearcher:
             )
 
             # 使用第一个类别的经验初始化
-            if first_searcher.history:
-                for h in first_searcher.history:
+            if first_searcher.searcher.history:
+                for h in first_searcher.searcher.history:
                     searcher.searcher.update(h['config'], h['score'])
 
             category_results, best_config, best_score = searcher.run(
