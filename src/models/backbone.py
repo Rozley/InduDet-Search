@@ -10,7 +10,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
-from torchvision.models.feature_extraction import create_feature_extractor
 
 
 class BaseEncoder(nn.Module, ABC):
@@ -228,24 +227,32 @@ class ViTEncoder(BaseEncoder):
         self.model = model_fn(weights=default_weights if pretrained else None)
         self.out_channels = out_channels
 
-        # 使用 create_feature_extractor 获取特征
-        # 返回最后一个 Transformer block 的输出
-        self.feature_extractor = create_feature_extractor(
-            self.model,
-            return_nodes={'blocks': 'features'}
-        )
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """提取特征"""
+        # 直接使用模型的 forward，不使用 feature extractor
+        # torchvision 0.25+ ViT 输出 shape: [B, num_patches+1, hidden_dim]
         with torch.no_grad():
-            features = self.feature_extractor(x)['features']
+            x = self.model(x)  # 获取整个模型输出
 
-        B, C, H, W = features.shape
+        # 获取 logits（去除 class token）
+        if hasattr(x, 'last_hidden_state'):
+            # 新版本返回 BaseModelOutputWithPooling
+            x = x.last_hidden_state
+        elif isinstance(x, tuple):
+            x = x[0]
 
-        # 转换 token 序列为 2D 特征图
-        # ViT 使用 16x16 patches
-        n_patches = (H // 16) * (W // 16)
-        side = int(n_patches ** 0.5)
+        B, seq_len, C = x.shape
+
+        # 去掉 class token，重排为 2D 特征图
+        # ViT-B/16: 224x224 -> 14x14 patches
+        side = int((seq_len - 1) ** 0.5)
+
+        if side * side == seq_len - 1:
+            features = x[:, 1:].transpose(1, 2).reshape(B, C, side, side)
+        else:
+            # 如果不是完美平方，保持为 token 形式然后 reshape
+            side = 14  # 默认 224/16=14
+            features = x[:, 1:].transpose(1, 2).reshape(B, C, side, side)
 
         if side * side == n_patches:
             # 去掉 class token，重排为 2D
