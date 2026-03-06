@@ -60,6 +60,10 @@ class IncrementalSearcher:
         self.seed = 42
         np.random.seed(self.seed)
 
+        # GP 标准化参数
+        self._X_mean = None
+        self._X_std = None
+
     def sample_architecture(self, iteration: int) -> Dict[str, Any]:
         """
         采样一个架构配置
@@ -91,7 +95,10 @@ class IncrementalSearcher:
 
         # 2. 预测每个候选的期望改善 (EI)
         X_candidates = self._encode_candidates(candidates)
-        mu, sigma = self.gp_model.predict(X_candidates, return_std=True)
+
+        # 使用训练时的标准化参数
+        X_candidates_scaled = (X_candidates - self._X_mean) / self._X_std
+        mu, sigma = self.gp_model.predict(X_candidates_scaled, return_std=True)
 
         # 3. 计算 Expected Improvement
         best_y = max(self.y_train)
@@ -202,12 +209,30 @@ class IncrementalSearcher:
         y_mean = y_train.mean()
         y_std = y_train.std()
 
+        # 标准化X (对GP很重要)
+        X_mean = X_train.mean(axis=0)
+        X_std = X_train.std(axis=0)
+        X_std[X_std == 0] = 1.0  # 避免除零
+        X_train_scaled = (X_train - X_mean) / X_std
+
+        # 配置GP模型，增加length_scale范围
+        kernel = Matern(
+            nu=2.5,
+            length_scale=1.0,
+            length_scale_bounds=(1e-3, 1e6)  # 扩大范围
+        )
+
         self.gp_model = GaussianProcessRegressor(
-            kernel=Matern(nu=2.5, length_scale=1.0),
+            kernel=kernel,
             alpha=1e-6,
             normalize_y=True,
-            n_restarts_optimizer=5,
+            n_restarts_optimizer=3,
         )
+        self.gp_model.fit(X_train_scaled, y_train)
+
+        # 保存标准化参数供预测时使用
+        self._X_mean = X_mean
+        self._X_std = X_std
         self.gp_model.fit(X_train, y_train)
 
         # 保存标准化参数
