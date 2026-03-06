@@ -4,6 +4,7 @@
 """
 
 import time
+import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -210,11 +211,17 @@ class MultiFidelityEvaluator:
         all_labels = np.array(all_labels)
 
         # 计算AUROC
-        try:
-            auroc = roc_auc_score(all_labels, all_scores)
-        except ValueError:
-            # 只有一个类别
-            auroc = 0.5 if all_labels.mean() < 0.5 else 1.0
+        unique_labels = np.unique(all_labels)
+        if len(unique_labels) < 2:
+            # 只有一个类别，AUROC 无定义，返回默认值
+            auroc = 0.5 if unique_labels[0] == 0 else 1.0
+        else:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message=".*ROC AUC.*")
+                try:
+                    auroc = roc_auc_score(all_labels, all_scores)
+                except ValueError:
+                    auroc = 0.5
 
         # 测量延迟
         latency_ms = self._measure_latency(model, test_loader)
