@@ -254,10 +254,6 @@ class ViTEncoder(BaseEncoder):
         features = x[:, 1:].transpose(1, 2).reshape(B, self.out_channels, side, side)
 
         return features
-            # 3D: [B, seq_len, C] -> 去掉 class token，重排为 2D
-            B, seq_len, C = x.shape
-            side = 14  # 224 / 16 = 14
-        return features
 
     def get_out_channels(self) -> List[int]:
         return [self.out_channels]
