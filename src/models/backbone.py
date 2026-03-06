@@ -231,16 +231,21 @@ class ViTEncoder(BaseEncoder):
         """提取特征"""
         B, C, H, W = x.shape
 
-        # torchvision 0.25+ ViT 结构: embeddings + encoder + heads
-        # 使用 embeddings 进行 patch embedding
-        if hasattr(self.model, 'embeddings'):
-            # 新版本结构
-            x = self.model.embeddings(x)
+        # torchvision 0.25+ ViT 结构: conv_proj (patch embedding) + encoder
+        # 使用 _process_input 进行 patch embedding
+        if hasattr(self.model, '_process_input'):
+            # 使用 _process_input 进行 patch embedding
+            x = self.model._process_input(x)  # (B, C, H, W) -> (B, num_patches, hidden_dim)
+            n = x.shape[0]
+            # 添加 class token
+            cls_token = self.model.class_token.expand(n, -1, -1)
+            x = torch.cat([cls_token, x], dim=1)
+            # 通过 encoder
             x = self.model.encoder(x)
             x = x.last_hidden_state
         else:
-            # 备用方案：直接使用模型但只取 encoder 输出
-            x = self.model.encoder(x)
+            # 备用方案：直接使用模型
+            x = self.model(x)
             if hasattr(x, 'last_hidden_state'):
                 x = x.last_hidden_state
 
