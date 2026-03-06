@@ -16,7 +16,22 @@
       "Bash(where:*)",
       "Bash(/c/msys64/ucrt64/bin/python.exe -m py_compile:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(\"C:\\\\Program Files\\\\Python\\\\Python311\\\\python.exe\" --version)",
+      "Bash(py:*)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" status)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" diff --stat)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" add run_search.py src/search/__init__.py)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" commit -m \"$\\(cat <<''EOF''\nfeat: 支持多类别架构搜索\n\n- 新增 --categories 参数，支持逗号分隔的类别列表\n- 新增 --all-categories 参数，自动使用所有MVTec AD类别\n- 新增 --strategy 参数，支持顺序搜索\\(sequential\\)和联合搜索\\(joint\\)\n- 实现 MultiCategorySearcher 类，支持多类别联合搜索\n- 联合搜索策略：第一个类别完整搜索，其他类别使用已有经验加速\n\n使用示例:\n  python run_search.py --all-categories --n-trials 200\n  python run_search.py --categories bottle,cable,transistor --strategy joint\nEOF\n\\)\")",
+      "Bash(git -C \"e:/Code/InduDet-Search\" push origin main)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" add run_search.py README.md)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" commit -m \"$\\(cat <<''EOF''\nfix: 修正MVTec AD类别列表，移除不存在的guitar类别\n\n- 修复MVTEC_CATEGORIES列表（15个类别）\n- 更新README.md的多类别搜索使用说明\n- 添加参数说明表格更新\nEOF\n\\)\")",
+      "Bash(python -m pytest:*)",
+      "Bash(/c/Users/Xiaohan\\\\ Li/AppData/Local/Microsoft/WindowsApps/python.exe:*)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" add src/data/augmentation.py src/llm/rag.py src/search/predictor.py tests/ DEVELOPMENT_PLAN.md)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" commit -m \"$\\(cat <<'EOF':*)",
+      "Bash(git -C \"e:/Code/InduDet-Search\" add -A)"
     ]
   }
 }

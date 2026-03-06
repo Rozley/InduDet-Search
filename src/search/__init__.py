@@ -418,7 +418,7 @@ class MultiCategorySearcher:
             )
 
             # 减少搜索次数 (使用经验后可以减少)
-            reduced_trials = max(50, n_trials // 2)
+            reduced_trials = max(10, n_trials // 2)
 
             searcher = ArchitectureSearcher(
                 config=self.config,
