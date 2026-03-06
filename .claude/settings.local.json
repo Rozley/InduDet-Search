@@ -31,7 +31,8 @@
       "Bash(/c/Users/Xiaohan\\\\ Li/AppData/Local/Microsoft/WindowsApps/python.exe:*)",
       "Bash(git -C \"e:/Code/InduDet-Search\" add src/data/augmentation.py src/llm/rag.py src/search/predictor.py tests/ DEVELOPMENT_PLAN.md)",
       "Bash(git -C \"e:/Code/InduDet-Search\" commit -m \"$\\(cat <<'EOF':*)",
-      "Bash(git -C \"e:/Code/InduDet-Search\" add -A)"
+      "Bash(git -C \"e:/Code/InduDet-Search\" add -A)",
+      "Bash(git -C:*)"
     ]
   }
 }
