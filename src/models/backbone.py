@@ -227,27 +227,22 @@ class ViTEncoder(BaseEncoder):
         self.model = model_fn(weights=default_weights if pretrained else None)
         self.out_channels = out_channels
 
-        # 获取 encoder 部分用于特征提取
-        # torchvision 0.25+ ViT 结构
-        self.encoder = self.model.encoder
-        self.heads = self.model.heads
-        self.patch_embed = self.model.patch_embed
-        self.pos_embed = self.model.pos_embed
-        self.seq_len = 14 * 14 + 1  # 14x14 patches + 1 class token
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """提取特征"""
         B, C, H, W = x.shape
 
-        # 提取 patch embeddings
-        x = self.patch_embed(x)  # [B, num_patches, hidden_dim]
-        cls_token = self.model.class_token.expand(B, -1, -1)
-        x = torch.cat([cls_token, x], dim=1)
-        x = x + self.pos_embed
-
-        # 通过 encoder
-        x = self.encoder(x)
-        x = x.last_hidden_state  # [B, seq_len, hidden_dim]
+        # torchvision 0.25+ ViT 结构: embeddings + encoder + heads
+        # 使用 embeddings 进行 patch embedding
+        if hasattr(self.model, 'embeddings'):
+            # 新版本结构
+            x = self.model.embeddings(x)
+            x = self.model.encoder(x)
+            x = x.last_hidden_state
+        else:
+            # 备用方案：直接使用模型但只取 encoder 输出
+            x = self.model.encoder(x)
+            if hasattr(x, 'last_hidden_state'):
+                x = x.last_hidden_state
 
         # 去掉 class token，重排为 2D 特征图
         side = 14  # 224 / 16 = 14
