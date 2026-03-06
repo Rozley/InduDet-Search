@@ -241,8 +241,12 @@ class ViTEncoder(BaseEncoder):
             cls_token = self.model.class_token.expand(n, -1, -1)
             x = torch.cat([cls_token, x], dim=1)
             # 通过 encoder
-            x = self.model.encoder(x)
-            x = x.last_hidden_state
+            encoder_output = self.model.encoder(x)
+            # 处理不同输出格式
+            if hasattr(encoder_output, 'last_hidden_state'):
+                x = encoder_output.last_hidden_state
+            else:
+                x = encoder_output  # 已经是 tensor
         else:
             # 备用方案：直接使用模型
             x = self.model(x)
