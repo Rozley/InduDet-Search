@@ -21,7 +21,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/yourusername/InduDet-Search.git
+git clone https://github.com/rozley/InduDet-Search.git
 cd InduDet-Search
 
 # 创建虚拟环境
