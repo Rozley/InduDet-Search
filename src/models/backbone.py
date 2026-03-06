@@ -227,37 +227,36 @@ class ViTEncoder(BaseEncoder):
         self.model = model_fn(weights=default_weights if pretrained else None)
         self.out_channels = out_channels
 
+        # 获取 encoder 部分用于特征提取
+        # torchvision 0.25+ ViT 结构
+        self.encoder = self.model.encoder
+        self.heads = self.model.heads
+        self.patch_embed = self.model.patch_embed
+        self.pos_embed = self.model.pos_embed
+        self.seq_len = 14 * 14 + 1  # 14x14 patches + 1 class token
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """提取特征"""
-        # 直接使用模型的 forward，不使用 feature extractor
-        # torchvision 0.25+ ViT 输出 shape: [B, num_patches+1, hidden_dim]
-        with torch.no_grad():
-            x = self.model(x)  # 获取整个模型输出
+        B, C, H, W = x.shape
 
-        # 获取 logits（去除 class token）
-        if hasattr(x, 'last_hidden_state'):
-            # 新版本返回 BaseModelOutputWithPooling
-            x = x.last_hidden_state
-        elif isinstance(x, tuple):
-            x = x[0]
+        # 提取 patch embeddings
+        x = self.patch_embed(x)  # [B, num_patches, hidden_dim]
+        cls_token = self.model.class_token.expand(B, -1, -1)
+        x = torch.cat([cls_token, x], dim=1)
+        x = x + self.pos_embed
 
-        B, seq_len, C = x.shape
+        # 通过 encoder
+        x = self.encoder(x)
+        x = x.last_hidden_state  # [B, seq_len, hidden_dim]
 
         # 去掉 class token，重排为 2D 特征图
-        # ViT-B/16: 224x224 -> 14x14 patches
-        side = int((seq_len - 1) ** 0.5)
+        side = 14  # 224 / 16 = 14
+        features = x[:, 1:].transpose(1, 2).reshape(B, self.out_channels, side, side)
 
-        if side * side == seq_len - 1:
-            features = x[:, 1:].transpose(1, 2).reshape(B, C, side, side)
-        else:
-            # 如果不是完美平方，保持为 token 形式然后 reshape
-            side = 14  # 默认 224/16=14
-            features = x[:, 1:].transpose(1, 2).reshape(B, C, side, side)
-
-        if side * side == n_patches:
-            # 去掉 class token，重排为 2D
-            features = features[:, 1:].transpose(1, 2).reshape(B, -1, side, side)
-
+        return features
+            # 3D: [B, seq_len, C] -> 去掉 class token，重排为 2D
+            B, seq_len, C = x.shape
+            side = 14  # 224 / 16 = 14
         return features
 
     def get_out_channels(self) -> List[int]:
